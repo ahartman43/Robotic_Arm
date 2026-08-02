@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ESP32 Robotic Arm Web Controller</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #121212;
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      justify-content: space-between;
+      align-items: center;
+      overflow: hidden;
+    }
+    header {
+      width: 100%;
+      padding: 15px;
+      background-color: #1e1e1e;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #333;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      color: #00e676;
+    }
+    .btn {
+      background-color: #2979ff;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+    .btn-disconnect {
+      background-color: #ff1744;
+      display: none;
+    }
+    .status-panel {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-top: 5px;
+    }
+    .joystick-container {
+      display: flex;
+      width: 100%;
+      height: 70vh;
+      justify-content: space-around;
+      align-items: center;
+      padding: 10px;
+    }
+    .stick-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .stick-label {
+      font-size: 1rem;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #00e676;
+    }
+    .joystick-base {
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, #2a2a2a 0%, #1a1a1a 100%);
+      border: 4px solid #333;
+      border-radius: 50%;
+      position: relative;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.8), 0 0 10px rgba(0,230,118,0.2);
+    }
+    .joystick-handle {
+      width: 60px;
+      height: 60px;
+      background: radial-gradient(circle, #2979ff 0%, #1565c0 100%);
+      border: 2px solid #64b5f6;
+      border-radius: 50%;
+      position: absolute;
+      top: 60px;
+      left: 60px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    footer {
+      width: 100%;
+      padding: 10px;
+      background-color: #1e1e1e;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #777;
+      border-top: 1px solid #333;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <h1>ESP32 Arm Controller</h1>
+      <div id="status" class="status-panel">Status: Disconnected</div>
+    </div>
+    <div>
+      <button id="connectBtn" class="btn">Connect BLE</button>
+      <button id="disconnectBtn" class="btn btn-disconnect">Disconnect</button>
+    </div>
+  </header>
+
+  <div class="joystick-container">
+    <!-- LEFT JOYSTICK: Base (X) & Shoulder (Y) -->
+    <div class="stick-wrapper">
+      <div class="stick-label">Base & Shoulder</div>
+      <div id="leftBase" class="joystick-base">
+        <div id="leftHandle" class="joystick-handle"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT JOYSTICK: Claw (X) & Arm (Y) -->
+    <div class="stick-wrapper">
+      <div class="stick-label">Claw & Arm</div>
+      <div id="rightBase" class="joystick-base">
+        <div id="rightHandle" class="joystick-handle"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span id="packetDisplay">Packet Out: J:0,0,0,0</span>
+  </footer>
+
+  <script>
+    // --- NORDIC UART BLE SERVICE UUIDs ---
+    const SERVICE_UUID  = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+    const CHAR_RX_UUID  = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+
+    let bleDevice = null;
+    let rxCharacteristic = null;
+
+    // Joystick Coordinates (-100 to +100)
+    let leftX = 0, leftY = 0;   // Base (X1), Shoulder (Y1)
+    let rightX = 0, rightY = 0; // Claw (X2), Arm (Y2)
+
+    // UI Elements
+    const connectBtn = document.getElementById('connectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const statusDiv = document.getElementById('status');
+    const packetDisplay = document.getElementById('packetDisplay');
+
+    // --- BLE CONNECT FUNCTION ---
+    connectBtn.addEventListener('click', async () => {
+      try {
+        statusDiv.innerText = "Status: Searching for BLE device...";
+        
+        bleDevice = await navigator.bluetooth.requestDevice({
+          filters: [{ name: 'S3_ARM_BLE' }],
+          optionalServices: [SERVICE_UUID]
+        });
+
+        bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
+
+        const server = await bleDevice.gatt.connect();
+        const service = await server.getPrimaryService(SERVICE_UUID);
+        rxCharacteristic = await service.getCharacteristic(CHAR_RX_UUID);
+
+        statusDiv.innerText = "Status: Connected to S3_ARM_BLE";
+        statusDiv.style.color = "#00e676";
+        connectBtn.style.display = 'none';
+        disconnectBtn.style.display = 'inline-block';
+
+        // Start transmitting packet loop at 50Hz (every 20ms)
+        startTransmissionLoop();
+
+      } catch (error) {
+        console.error(error);
+        statusDiv.innerText = "Status: Connection Failed - " + error.message;
+        statusDiv.style.color = "#ff1744";
+      }
+    });
+
+    disconnectBtn.addEventListener('click', () => {
+      if (bleDevice && bleDevice.gatt.connected) {
+        bleDevice.gatt.disconnect();
+      }
+    });
+
+    function onDisconnected() {
+      statusDiv.innerText = "Status: Disconnected";
+      statusDiv.style.color = "#aaa";
+      connectBtn.style.display = 'inline-block';
+      disconnectBtn.style.display = 'none';
+      rxCharacteristic = null;
+    }
+
+    // --- JOYSTICK TOUCH CONTROLLER LOGIC ---
+    function setupJoystick(baseId, handleId, onChange) {
+      const base = document.getElementById(baseId);
+      const handle = document.getElementById(handleId);
+
+      const maxRadius = 60; // Max displacement in pixels
+      const center = 60;    // Original top/left offset
+
+      let activeTouchId = null;
+
+      function updatePosition(clientX, clientY) {
+        const rect = base.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        let deltaX = clientX - centerX;
+        let deltaY = clientY - centerY;
+
+        const distance = Math.hypot(deltaX, deltaY);
+
+        if (distance > maxRadius) {
+          deltaX = (deltaX / distance) * maxRadius;
+          deltaY = (deltaY / distance) * maxRadius;
+        }
+
+        handle.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+
+        // Normalize values to range -100 to +100
+        // Invert Y so pushing UP gives positive values
+        const normX = Math.round((deltaX / maxRadius) * 100);
+        const normY = Math.round((-deltaY / maxRadius) * 100);
+
+        onChange(normX, normY);
+      }
+
+      function resetPosition() {
+        handle.style.transform = `translate(0px, 0px)`;
+        onChange(0, 0);
+      }
+
+      // Touch Events
+      base.addEventListener('touchstart', (e) => {
+        if (activeTouchId === null) {
+          const touch = e.changedTouches[0];
+          activeTouchId = touch.identifier;
+          updatePosition(touch.clientX, touch.clientY);
+        }
+      });
+
+      window.addEventListener('touchmove', (e) => {
+        if (activeTouchId !== null) {
+          for (let touch of e.changedTouches) {
+            if (touch.identifier === activeTouchId) {
+              updatePosition(touch.clientX, touch.clientY);
+            }
+          }
+        }
+      });
+
+      window.addEventListener('touchend', (e) => {
+        if (activeTouchId !== null) {
+          for (let touch of e.changedTouches) {
+            if (touch.identifier === activeTouchId) {
+              activeTouchId = null;
+              resetPosition();
+            }
+          }
+        }
+      });
+
+      // Mouse Fallback (Desktop Testing)
+      let isMouseDown = false;
+      base.addEventListener('mousedown', (e) => {
+        isMouseDown = true;
+        updatePosition(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (isMouseDown) updatePosition(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (isMouseDown) {
+          isMouseDown = false;
+          resetPosition();
+        }
+      });
+    }
+
+    // Attach controllers
+    setupJoystick('leftBase', 'leftHandle', (x, y) => {
+      leftX = x;
+      leftY = y;
+    });
+
+    setupJoystick('rightBase', 'rightHandle', (x, y) => {
+      rightX = x;
+      rightY = y;
+    });
+
+    // --- CONTINUOUS BLE PACKET TRANSMITTER (50 Hz) ---
+    let transmissionTimer = null;
+
+    function startTransmissionLoop() {
+      if (transmissionTimer) clearInterval(transmissionTimer);
+
+      transmissionTimer = setInterval(async () => {
+        if (rxCharacteristic && bleDevice.gatt.connected) {
+          // Construct packet matching ESP32 parser: "J:X1,Y1,X2,Y2"
+          const packetStr = `J:${leftX},${leftY},${rightX},${rightY}`;
+          packetDisplay.innerText = "Packet Out: " + packetStr;
+
+          try {
+            const encoder = new TextEncoder();
+            // Use Write Without Response for high-rate continuous stream
+            await rxCharacteristic.writeValueWithoutResponse(encoder.encode(packetStr));
+          } catch (err) {
+            console.warn("BLE Write Error: ", err);
+          }
+        }
+      }, 30); // ~33ms interval (~30 updates per sec)
+    }
+  </script>
+</body>
+</html>
