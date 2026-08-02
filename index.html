@@ -61,7 +61,7 @@
       color: #aaa;
       margin-top: 5px;
     }
-    .joystick-container {
+    .control-container {
       display: flex;
       width: 100%;
       height: 70vh;
@@ -81,8 +81,8 @@
       color: #00e676;
     }
     .joystick-base {
-      width: 180px;
-      height: 180px;
+      width: 170px;
+      height: 170px;
       background: radial-gradient(circle, #2a2a2a 0%, #1a1a1a 100%);
       border: 4px solid #333;
       border-radius: 50%;
@@ -90,15 +90,38 @@
       box-shadow: inset 0 0 15px rgba(0,0,0,0.8), 0 0 10px rgba(0,230,118,0.2);
     }
     .joystick-handle {
-      width: 60px;
-      height: 60px;
+      width: 55px;
+      height: 55px;
       background: radial-gradient(circle, #2979ff 0%, #1565c0 100%);
       border: 2px solid #64b5f6;
       border-radius: 50%;
       position: absolute;
-      top: 60px;
-      left: 60px;
+      top: 57.5px;
+      left: 57.5px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .claw-btn {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ff9100 0%, #d50000 100%);
+      border: 4px solid #ffab40;
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.6);
+      transition: transform 0.1s, background 0.2s;
+    }
+    .claw-btn:active {
+      transform: scale(0.92);
+    }
+    .claw-btn.open {
+      background: radial-gradient(circle, #00e676 0%, #00a152 100%);
+      border-color: #69f0ae;
     }
     footer {
       width: 100%;
@@ -125,7 +148,7 @@
     </div>
   </header>
 
-  <div class="joystick-container">
+  <div class="control-container">
     <!-- LEFT JOYSTICK: Base (X) & Shoulder (Y) -->
     <div class="stick-wrapper">
       <div class="stick-label">Base & Shoulder</div>
@@ -134,12 +157,18 @@
       </div>
     </div>
 
-    <!-- RIGHT JOYSTICK: Claw (X) & Arm (Y) -->
+    <!-- CENTER JOYSTICK: Arm Elevation (Y-axis only) -->
     <div class="stick-wrapper">
-      <div class="stick-label">Claw & Arm</div>
-      <div id="rightBase" class="joystick-base">
-        <div id="rightHandle" class="joystick-handle"></div>
+      <div class="stick-label">Arm Height</div>
+      <div id="armBase" class="joystick-base">
+        <div id="armHandle" class="joystick-handle"></div>
       </div>
+    </div>
+
+    <!-- RIGHT BUTTON: Claw Toggle (Full Open / Full Close) -->
+    <div class="stick-wrapper">
+      <div class="stick-label">Claw Action</div>
+      <div id="clawBtn" class="claw-btn">CLOSED</div>
     </div>
   </div>
 
@@ -148,24 +177,24 @@
   </footer>
 
   <script>
-    // --- NORDIC UART BLE SERVICE UUIDs ---
     const SERVICE_UUID  = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
     const CHAR_RX_UUID  = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 
     let bleDevice = null;
     let rxCharacteristic = null;
 
-    // Joystick Coordinates (-100 to +100)
-    let leftX = 0, leftY = 0;   // Base (X1), Shoulder (Y1)
-    let rightX = 0, rightY = 0; // Claw (X2), Arm (Y2)
+    // Control values
+    let leftX = 0, leftY = 0; // Base (X1), Shoulder (Y1)
+    let armY = 0;             // Arm Height (Y2)
+    let clawState = 0;        // Claw Button: 0 = Closed (10 deg), 1 = Open (160 deg)
 
-    // UI Elements
     const connectBtn = document.getElementById('connectBtn');
     const disconnectBtn = document.getElementById('disconnectBtn');
     const statusDiv = document.getElementById('status');
     const packetDisplay = document.getElementById('packetDisplay');
+    const clawBtn = document.getElementById('clawBtn');
 
-    // --- BLE CONNECT FUNCTION ---
+    // --- BLE CONNECT ---
     connectBtn.addEventListener('click', async () => {
       try {
         statusDiv.innerText = "Status: Searching for BLE device...";
@@ -186,7 +215,6 @@
         connectBtn.style.display = 'none';
         disconnectBtn.style.display = 'inline-block';
 
-        // Start transmitting packet loop at 50Hz (every 20ms)
         startTransmissionLoop();
 
       } catch (error) {
@@ -210,14 +238,25 @@
       rxCharacteristic = null;
     }
 
-    // --- JOYSTICK TOUCH CONTROLLER LOGIC ---
-    function setupJoystick(baseId, handleId, onChange) {
+    // --- CLAW BUTTON TOGGLE ---
+    clawBtn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      clawState = clawState === 0 ? 1 : 0;
+      if (clawState === 1) {
+        clawBtn.innerText = "OPEN";
+        clawBtn.classList.add('open');
+      } else {
+        clawBtn.innerText = "CLOSED";
+        clawBtn.classList.remove('open');
+      }
+    });
+
+    // --- JOYSTICK TOUCH LOGIC ---
+    function setupJoystick(baseId, handleId, lockX, onChange) {
       const base = document.getElementById(baseId);
       const handle = document.getElementById(handleId);
 
-      const maxRadius = 60; // Max displacement in pixels
-      const center = 60;    // Original top/left offset
-
+      const maxRadius = 55;
       let activeTouchId = null;
 
       function updatePosition(clientX, clientY) {
@@ -225,7 +264,7 @@
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
 
-        let deltaX = clientX - centerX;
+        let deltaX = lockX ? 0 : clientX - centerX;
         let deltaY = clientY - centerY;
 
         const distance = Math.hypot(deltaX, deltaY);
@@ -237,8 +276,6 @@
 
         handle.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
 
-        // Normalize values to range -100 to +100
-        // Invert Y so pushing UP gives positive values
         const normX = Math.round((deltaX / maxRadius) * 100);
         const normY = Math.round((-deltaY / maxRadius) * 100);
 
@@ -250,7 +287,6 @@
         onChange(0, 0);
       }
 
-      // Touch Events
       base.addEventListener('touchstart', (e) => {
         if (activeTouchId === null) {
           const touch = e.changedTouches[0];
@@ -280,7 +316,6 @@
         }
       });
 
-      // Mouse Fallback (Desktop Testing)
       let isMouseDown = false;
       base.addEventListener('mousedown', (e) => {
         isMouseDown = true;
@@ -300,17 +335,16 @@
     }
 
     // Attach controllers
-    setupJoystick('leftBase', 'leftHandle', (x, y) => {
+    setupJoystick('leftBase', 'leftHandle', false, (x, y) => {
       leftX = x;
       leftY = y;
     });
 
-    setupJoystick('rightBase', 'rightHandle', (x, y) => {
-      rightX = x;
-      rightY = y;
+    setupJoystick('armBase', 'armHandle', true, (x, y) => {
+      armY = y;
     });
 
-    // --- CONTINUOUS BLE PACKET TRANSMITTER (50 Hz) ---
+    // --- BLE CONTINUOUS STREAM (50 Hz) ---
     let transmissionTimer = null;
 
     function startTransmissionLoop() {
@@ -318,19 +352,18 @@
 
       transmissionTimer = setInterval(async () => {
         if (rxCharacteristic && bleDevice.gatt.connected) {
-          // Construct packet matching ESP32 parser: "J:X1,Y1,X2,Y2"
-          const packetStr = `J:${leftX},${leftY},${rightX},${rightY}`;
+          // Packet format: "J:BaseX,ShoulderY,ClawButtonState,ArmY"
+          const packetStr = `J:${leftX},${leftY},${clawState},${armY}`;
           packetDisplay.innerText = "Packet Out: " + packetStr;
 
           try {
             const encoder = new TextEncoder();
-            // Use Write Without Response for high-rate continuous stream
             await rxCharacteristic.writeValueWithoutResponse(encoder.encode(packetStr));
           } catch (err) {
             console.warn("BLE Write Error: ", err);
           }
         }
-      }, 30); // ~33ms interval (~30 updates per sec)
+      }, 30);
     }
   </script>
 </body>
