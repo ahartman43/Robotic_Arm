@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>ESP32 Robotic Arm Web Controller</title>
+  <title>ESP32 IK Robotic Arm Controller</title>
   <style>
     * {
       box-sizing: border-box;
@@ -139,7 +139,7 @@
 
   <header>
     <div>
-      <h1>ESP32 Arm Controller</h1>
+      <h1>ESP32 IK Arm Controller</h1>
       <div id="status" class="status-panel">Status: Disconnected</div>
     </div>
     <div>
@@ -149,19 +149,19 @@
   </header>
 
   <div class="control-container">
-    <!-- LEFT JOYSTICK: Base (X) & Shoulder (Y) -->
+    <!-- LEFT JOYSTICK: Base Spin (X) & Reach In/Out (Y) -->
     <div class="stick-wrapper">
-      <div class="stick-label">Base & Shoulder</div>
+      <div class="stick-label">Base & Reach (In/Out)</div>
       <div id="leftBase" class="joystick-base">
         <div id="leftHandle" class="joystick-handle"></div>
       </div>
     </div>
 
-    <!-- CENTER JOYSTICK: Arm Elevation (Y-axis only) -->
+    <!-- CENTER JOYSTICK: Height Up/Down (Y-axis only) -->
     <div class="stick-wrapper">
-      <div class="stick-label">Arm Height</div>
-      <div id="armBase" class="joystick-base">
-        <div id="armHandle" class="joystick-handle"></div>
+      <div class="stick-label">Height (Up/Down)</div>
+      <div id="heightBase" class="joystick-base">
+        <div id="heightHandle" class="joystick-handle"></div>
       </div>
     </div>
 
@@ -184,9 +184,10 @@
     let rxCharacteristic = null;
 
     // Control values
-    let leftX = 0, leftY = 0; // Base (X1), Shoulder (Y1)
-    let armY = 0;             // Arm Height (Y2)
-    let clawState = 0;        // Claw Button: 0 = Closed (10 deg), 1 = Open (160 deg)
+    let baseSpin = 0;   // Base Spin (Left Stick X)
+    let reachVal = 0;   // Reach In/Out (Left Stick Y)
+    let heightVal = 0;  // Height Up/Down (Center Stick Y)
+    let clawState = 0;  // Claw Button: 0 = Closed, 1 = Open
 
     const connectBtn = document.getElementById('connectBtn');
     const disconnectBtn = document.getElementById('disconnectBtn');
@@ -336,12 +337,12 @@
 
     // Attach controllers
     setupJoystick('leftBase', 'leftHandle', false, (x, y) => {
-      leftX = x;
-      leftY = y;
+      baseSpin = x;
+      reachVal = y;
     });
 
-    setupJoystick('armBase', 'armHandle', true, (x, y) => {
-      armY = y;
+    setupJoystick('heightBase', 'heightHandle', true, (x, y) => {
+      heightVal = y;
     });
 
     // --- BLE CONTINUOUS STREAM (50 Hz) ---
@@ -352,8 +353,8 @@
 
       transmissionTimer = setInterval(async () => {
         if (rxCharacteristic && bleDevice.gatt.connected) {
-          // Packet format: "J:BaseX,ShoulderY,ClawButtonState,ArmY"
-          const packetStr = `J:${leftX},${leftY},${clawState},${armY}`;
+          // Packet format: "J:BaseSpin,ReachVal,ClawState,HeightVal"
+          const packetStr = `J:${baseSpin},${reachVal},${clawState},${heightVal}`;
           packetDisplay.innerText = "Packet Out: " + packetStr;
 
           try {
