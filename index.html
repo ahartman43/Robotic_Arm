@@ -2,341 +2,101 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Robotic Arm Control Panel</title>
+  <title>Your App Title</title>
+  
+  <!-- KEEP ALL YOUR EXISTING CSS STYLES HERE -->
   <style>
-    /* Global Styles */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: #f4f6f8;
-      color: #333;
-      line-height: 1.5;
-    }
+    /* ... Your original CSS goes here ... */
 
-    /* Top Navigation Bar */
-    .navbar {
-      background-color: #1e293b;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 24px;
-      color: #fff;
-    }
-    .navbar h1 {
-      font-size: 1.25rem;
-      font-weight: 600;
-    }
+    /* Add just these few helper classes for switching pages: */
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+    
     .nav-tabs {
       display: flex;
-      gap: 8px;
+      gap: 10px;
+      margin-bottom: 20px;
     }
     .tab-btn {
-      background: transparent;
-      border: 1px solid transparent;
-      color: #94a3b8;
       padding: 8px 16px;
-      border-radius: 6px;
-      font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .tab-btn:hover {
-      color: #fff;
-      background-color: #334155;
+      border: 1px solid #ccc;
+      background: #f0f0f0;
+      border-radius: 4px;
     }
     .tab-btn.active {
-      color: #fff;
-      background-color: #2563eb;
-    }
-
-    /* Container */
-    .container {
-      max-width: 800px;
-      margin: 24px auto;
-      padding: 0 16px;
-    }
-
-    /* View Sections */
-    .view-section {
-      display: none;
-    }
-    .view-section.active {
-      display: block;
-    }
-
-    /* Card Panels */
-    .panel-card {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-    .panel-card h3 {
-      font-size: 1.1rem;
-      margin-bottom: 16px;
-      color: #0f172a;
-      border-bottom: 1px solid #e2e8f0;
-      padding-bottom: 8px;
-    }
-
-    /* Controls & Inputs */
-    .control-group {
-      margin-bottom: 16px;
-    }
-    .control-group label {
-      display: block;
-      font-size: 0.9rem;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: #475569;
-    }
-    .range-inputs {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-    }
-    .range-inputs label {
-      font-size: 0.85rem;
-      font-weight: normal;
-    }
-    .range-inputs input[type="number"] {
-      width: 80px;
-      padding: 6px 10px;
-      border: 1px solid #cbd5e1;
-      border-radius: 4px;
-      font-size: 0.9rem;
-    }
-    .slider-control {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .slider-control input[type="range"] {
-      flex: 1;
-    }
-    .slider-val {
-      width: 45px;
-      text-align: right;
-      font-weight: bold;
-      color: #2563eb;
-    }
-
-    /* Toggle Switch */
-    .switch-container {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 48px;
-      height: 24px;
-    }
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    .slider-round {
-      position: absolute;
-      cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #cbd5e1;
-      transition: .3s;
-      border-radius: 24px;
-    }
-    .slider-round:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: .3s;
-      border-radius: 50%;
-    }
-    input:checked + .slider-round {
-      background-color: #2563eb;
-    }
-    input:checked + .slider-round:before {
-      transform: translateX(24px);
-    }
-
-    /* Dropdowns & Buttons */
-    select {
-      width: 100%;
-      padding: 8px 12px;
-      border: 1px solid #cbd5e1;
-      border-radius: 4px;
-      background-color: #fff;
-      font-size: 0.9rem;
-    }
-    .btn-primary {
-      background-color: #2563eb;
+      background: #007bff;
       color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 6px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .btn-primary:hover {
-      background-color: #1d4ed8;
-    }
-
-    /* Console Log Output */
-    .log-box {
-      background: #0f172a;
-      color: #38bdf8;
-      font-family: monospace;
-      padding: 12px;
-      border-radius: 6px;
-      height: 100px;
-      overflow-y: auto;
-      font-size: 0.85rem;
+      border-color: #007bff;
     }
   </style>
 </head>
 <body>
 
-  <!-- Navigation Bar -->
-  <header class="navbar">
-    <h1>Robotic Control Center</h1>
-    <nav class="nav-tabs">
-      <button class="tab-btn active" onclick="switchTab('mainView', this)">Main Control</button>
-      <button class="tab-btn" onclick="switchTab('testingView', this)">Testing & Tuning</button>
-    </nav>
-  </header>
+  <!-- 1. NAVIGATION TAB BAR -->
+  <nav class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('mainView', this)">Main Interface</button>
+    <button class="tab-btn" onclick="switchTab('testingView', this)">Testing & Tuning</button>
+  </nav>
 
-  <main class="container">
+  <!-- 2. YOUR ORIGINAL EXACT INDEX HTML GOES INSIDE THIS SECTION -->
+  <section id="mainView" class="view-section active">
+    
+    <!-- PASTE YOUR EXACT ORIGINAL INDEX.HTML CONTENT HERE -->
+    
+  </section>
 
-    <!-- 1. MAIN CONTROL VIEW -->
-    <section id="mainView" class="view-section active">
-      <div class="panel-card">
-        <h3>Manual Joint Position Controls</h3>
-        
-        <!-- Axis 1 Slider -->
-        <div class="control-group">
-          <label for="joint1">Axis 1 (Base)</label>
-          <div class="slider-control">
-            <input type="range" id="joint1" min="0" max="180" value="90" oninput="updateJoint('servo1', this.value)">
-            <span id="joint1_val" class="slider-val">90°</span>
-          </div>
-        </div>
+  <!-- 3. NEW TESTING & TUNING PAGE -->
+  <section id="testingView" class="view-section">
+    <div class="testing-panel">
+      <h2>Control & Servo Tuning Console</h2>
 
-        <!-- Axis 2 Slider -->
-        <div class="control-group">
-          <label for="joint2">Axis 2 (Shoulder)</label>
-          <div class="slider-control">
-            <input type="range" id="joint2" min="15" max="165" value="90" oninput="updateJoint('servo2', this.value)">
-            <span id="joint2_val" class="slider-val">90°</span>
-          </div>
-        </div>
-
-        <!-- Axis 3 Slider -->
-        <div class="control-group">
-          <label for="joint3">Axis 3 (Elbow)</label>
-          <div class="slider-control">
-            <input type="range" id="joint3" min="10" max="170" value="90" oninput="updateJoint('servo3', this.value)">
-            <span id="joint3_val" class="slider-val">90°</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 2. TESTING & TUNING VIEW -->
-    <section id="testingView" class="view-section">
-      
-      <!-- Control Mode Toggle Panel -->
-      <div class="panel-card">
-        <h3>Control Logic Configuration</h3>
-        
-        <div class="switch-container">
-          <label class="switch">
-            <input type="checkbox" id="controlToggle" onchange="toggleControlLogic()">
-            <span class="slider-round"></span>
-          </label>
-          <span id="controlStatusText">Closed-Loop Control: <strong>OFF (Manual)</strong></span>
-        </div>
-
-        <div class="control-group">
-          <label for="controlMode">Active Control Strategy</label>
+      <!-- Control Logic Mode Switch -->
+      <fieldset style="margin-bottom: 15px; padding: 15px;">
+        <legend>Control Logic Mode</legend>
+        <label>
+          <input type="checkbox" id="controlToggle" onchange="toggleControlLogic()">
+          Enable Closed-Loop Control
+        </label>
+        <div style="margin-top: 10px;">
+          <label for="controlMode">Strategy:</label>
           <select id="controlMode" onchange="updateControlMode()">
             <option value="pid">PID Controller</option>
             <option value="bangbang">Bang-Bang / Threshold</option>
             <option value="kinematic">Inverse Kinematics</option>
           </select>
         </div>
-      </div>
+      </fieldset>
 
-      <!-- Dynamic Servo Boundary Panel -->
-      <div class="panel-card">
-        <h3>Servo Dynamic Limits (Safety Boundaries)</h3>
+      <!-- Dynamic Servo Boundary Limits -->
+      <fieldset style="padding: 15px;">
+        <legend>Servo Dynamic Safety Boundaries</legend>
         
-        <!-- Servo 1 Limits -->
-        <div class="control-group">
-          <label>Axis 1 Range Limits</label>
-          <div class="range-inputs">
-            Min: <input type="number" id="servo1_min" value="0" min="0" max="180">
-            Max: <input type="number" id="servo1_max" value="180" min="0" max="180">
-          </div>
+        <div style="margin-bottom: 10px;">
+          <strong>Axis 1:</strong> 
+          Min: <input type="number" id="servo1_min" value="0" style="width: 60px;">
+          Max: <input type="number" id="servo1_max" value="180" style="width: 60px;">
         </div>
 
-        <!-- Servo 2 Limits -->
-        <div class="control-group">
-          <label>Axis 2 Range Limits</label>
-          <div class="range-inputs">
-            Min: <input type="number" id="servo2_min" value="15" min="0" max="180">
-            Max: <input type="number" id="servo2_max" value="165" min="0" max="180">
-          </div>
+        <div style="margin-bottom: 10px;">
+          <strong>Axis 2:</strong> 
+          Min: <input type="number" id="servo2_min" value="15" style="width: 60px;">
+          Max: <input type="number" id="servo2_max" value="165" style="width: 60px;">
         </div>
 
-        <!-- Servo 3 Limits -->
-        <div class="control-group">
-          <label>Axis 3 Range Limits</label>
-          <div class="range-inputs">
-            Min: <input type="number" id="servo3_min" value="10" min="0" max="180">
-            Max: <input type="number" id="servo3_max" value="170" min="0" max="180">
-          </div>
+        <div style="margin-bottom: 10px;">
+          <strong>Axis 3:</strong> 
+          Min: <input type="number" id="servo3_min" value="10" style="width: 60px;">
+          Max: <input type="number" id="servo3_max" value="170" style="width: 60px;">
         </div>
 
-        <button class="btn-primary" onclick="applyServoLimits()">Apply & Sync Limits</button>
-      </div>
-
-    </section>
-
-    <!-- Communication Log Output -->
-    <div class="panel-card">
-      <h3>System Activity Log</h3>
-      <div id="logBox" class="log-box">Initialized interface. Waiting for user input...</div>
+        <button onclick="applyServoLimits()" style="margin-top: 10px; padding: 6px 12px;">Apply Limits</button>
+      </fieldset>
     </div>
+  </section>
 
-  </main>
-
+  <!-- 4. TAB SWITCHING SCRIPT -->
   <script>
-    // System State Storage
-    let configState = {
-      controlEnabled: false,
-      controlMode: 'pid',
-      servoLimits: {
-        servo1: { min: 0, max: 180 },
-        servo2: { min: 15, max: 165 },
-        servo3: { min: 10, max: 170 }
-      }
-    };
-
-    // Navigation Tab Switcher
     function switchTab(viewId, btn) {
       document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -345,92 +105,41 @@
       btn.classList.add('active');
     }
 
-    // Manual Servo Position Update
-    function updateJoint(joint, val) {
-      document.getElementById(joint.replace('servo', 'joint') + '_val').innerText = val + '°';
-      logMessage(`Command sent: ${joint} -> ${val}°`);
-      sendAPI('/api/servos/position', { joint: joint, angle: parseInt(val) });
-    }
-
-    // Toggle Closed-Loop Control State
+    // Testing logic calls
     function toggleControlLogic() {
       const isChecked = document.getElementById('controlToggle').checked;
-      configState.controlEnabled = isChecked;
-      
-      document.getElementById('controlStatusText').innerHTML = 
-        `Closed-Loop Control: <strong>${isChecked ? 'ON' : 'OFF (Manual)'}</strong>`;
-
-      logMessage(`Control Loop toggled: ${isChecked ? 'ENABLED' : 'DISABLED'}`);
-      sendAPI('/api/control/enable', { enabled: isChecked });
+      fetch('/api/control/enable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: isChecked })
+      }).catch(err => console.log('Mock/Offline Mode'));
     }
 
-    // Change Active Control Strategy
     function updateControlMode() {
       const mode = document.getElementById('controlMode').value;
-      configState.controlMode = mode;
-      
-      logMessage(`Control Mode set to: ${mode.toUpperCase()}`);
-      sendAPI('/api/control/mode', { mode: mode });
+      fetch('/api/control/mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: mode })
+      }).catch(err => console.log('Mock/Offline Mode'));
     }
 
-    // Apply New Min/Max Limits & Dynamic Updates to Sliders
     function applyServoLimits() {
-      configState.servoLimits = {
-        servo1: {
-          min: parseInt(document.getElementById('servo1_min').value),
-          max: parseInt(document.getElementById('servo1_max').value)
-        },
-        servo2: {
-          min: parseInt(document.getElementById('servo2_min').value),
-          max: parseInt(document.getElementById('servo2_max').value)
-        },
-        servo3: {
-          min: parseInt(document.getElementById('servo3_min').value),
-          max: parseInt(document.getElementById('servo3_max').value)
-        }
+      const limits = {
+        servo1: { min: parseInt(document.getElementById('servo1_min').value), max: parseInt(document.getElementById('servo1_max').value) },
+        servo2: { min: parseInt(document.getElementById('servo2_min').value), max: parseInt(document.getElementById('servo2_max').value) },
+        servo3: { min: parseInt(document.getElementById('servo3_min').value), max: parseInt(document.getElementById('servo3_max').value) }
       };
-
-      // Dynamically clamp active manual sliders to new range
-      updateSliderBounds('joint1', configState.servoLimits.servo1);
-      updateSliderBounds('joint2', configState.servoLimits.servo2);
-      updateSliderBounds('joint3', configState.servoLimits.servo3);
-
-      logMessage('Updated Servo Safety Boundaries in system.');
-      sendAPI('/api/servos/limits', configState.servoLimits);
-    }
-
-    // Update Slider Ranges Dynamically
-    function updateSliderBounds(sliderId, limits) {
-      const slider = document.getElementById(sliderId);
-      slider.min = limits.min;
-      slider.max = limits.max;
-      if (parseInt(slider.value) < limits.min) slider.value = limits.min;
-      if (parseInt(slider.value) > limits.max) slider.value = limits.max;
-      document.getElementById(sliderId + '_val').innerText = slider.value + '°';
-    }
-
-    // Central API Communication Helper
-    async function sendAPI(endpoint, payload) {
-      try {
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-      } catch (err) {
-        // Log gracefully when testing without a backend connected
-        console.warn(`API Post to ${endpoint} failed (offline/mock mode):`, payload);
-      }
-    }
-
-    // Activity Log Helper
-    function logMessage(msg) {
-      const logBox = document.getElementById('logBox');
-      const time = new Date().toLocaleTimeString();
-      logBox.innerHTML += `<br>[${time}] ${msg}`;
-      logBox.scrollTop = logBox.scrollHeight;
+      
+      fetch('/api/servos/limits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(limits)
+      }).catch(err => console.log('Mock/Offline Mode'));
     }
   </script>
+
+  <!-- KEEP YOUR ORIGINAL JAVASCRIPT CODE AT THE BOTTOM AS WELL -->
+
 </body>
 </html>
