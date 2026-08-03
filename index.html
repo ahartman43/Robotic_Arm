@@ -2,144 +2,370 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Your App Title</title>
-  
-  <!-- KEEP ALL YOUR EXISTING CSS STYLES HERE -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ESP32 IK Robotic Arm Controller</title>
   <style>
-    /* ... Your original CSS goes here ... */
-
-    /* Add just these few helper classes for switching pages: */
-    .view-section { display: none; }
-    .view-section.active { display: block; }
-    
-    .nav-tabs {
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #121212;
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
+      flex-direction: column;
+      height: 100vh;
+      justify-content: space-between;
+      align-items: center;
+      overflow: hidden;
     }
-    .tab-btn {
-      padding: 8px 16px;
+    header {
+      width: 100%;
+      padding: 15px;
+      background-color: #1e1e1e;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #333;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      color: #00e676;
+    }
+    .btn {
+      background-color: #2979ff;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      border-radius: 6px;
       cursor: pointer;
-      border: 1px solid #ccc;
-      background: #f0f0f0;
-      border-radius: 4px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
-    .tab-btn.active {
-      background: #007bff;
-      color: white;
-      border-color: #007bff;
+    .btn:active {
+      transform: scale(0.98);
+    }
+    .btn-disconnect {
+      background-color: #ff1744;
+      display: none;
+    }
+    .status-panel {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-top: 5px;
+    }
+    .control-container {
+      display: flex;
+      width: 100%;
+      height: 70vh;
+      justify-content: space-around;
+      align-items: center;
+      padding: 10px;
+    }
+    .stick-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .stick-label {
+      font-size: 1rem;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #00e676;
+    }
+    .joystick-base {
+      width: 170px;
+      height: 170px;
+      background: radial-gradient(circle, #2a2a2a 0%, #1a1a1a 100%);
+      border: 4px solid #333;
+      border-radius: 50%;
+      position: relative;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.8), 0 0 10px rgba(0,230,118,0.2);
+    }
+    .joystick-handle {
+      width: 55px;
+      height: 55px;
+      background: radial-gradient(circle, #2979ff 0%, #1565c0 100%);
+      border: 2px solid #64b5f6;
+      border-radius: 50%;
+      position: absolute;
+      top: 57.5px;
+      left: 57.5px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .claw-btn {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ff9100 0%, #d50000 100%);
+      border: 4px solid #ffab40;
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.6);
+      transition: transform 0.1s, background 0.2s;
+    }
+    .claw-btn:active {
+      transform: scale(0.92);
+    }
+    .claw-btn.open {
+      background: radial-gradient(circle, #00e676 0%, #00a152 100%);
+      border-color: #69f0ae;
+    }
+    footer {
+      width: 100%;
+      padding: 10px;
+      background-color: #1e1e1e;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #777;
+      border-top: 1px solid #333;
     }
   </style>
 </head>
 <body>
 
-  <!-- 1. NAVIGATION TAB BAR -->
-  <nav class="nav-tabs">
-    <button class="tab-btn active" onclick="switchTab('mainView', this)">Main Interface</button>
-    <button class="tab-btn" onclick="switchTab('testingView', this)">Testing & Tuning</button>
-  </nav>
-
-  <!-- 2. YOUR ORIGINAL EXACT INDEX HTML GOES INSIDE THIS SECTION -->
-  <section id="mainView" class="view-section active">
-    
-    <!-- PASTE YOUR EXACT ORIGINAL INDEX.HTML CONTENT HERE -->
-    
-  </section>
-
-  <!-- 3. NEW TESTING & TUNING PAGE -->
-  <section id="testingView" class="view-section">
-    <div class="testing-panel">
-      <h2>Control & Servo Tuning Console</h2>
-
-      <!-- Control Logic Mode Switch -->
-      <fieldset style="margin-bottom: 15px; padding: 15px;">
-        <legend>Control Logic Mode</legend>
-        <label>
-          <input type="checkbox" id="controlToggle" onchange="toggleControlLogic()">
-          Enable Closed-Loop Control
-        </label>
-        <div style="margin-top: 10px;">
-          <label for="controlMode">Strategy:</label>
-          <select id="controlMode" onchange="updateControlMode()">
-            <option value="pid">PID Controller</option>
-            <option value="bangbang">Bang-Bang / Threshold</option>
-            <option value="kinematic">Inverse Kinematics</option>
-          </select>
-        </div>
-      </fieldset>
-
-      <!-- Dynamic Servo Boundary Limits -->
-      <fieldset style="padding: 15px;">
-        <legend>Servo Dynamic Safety Boundaries</legend>
-        
-        <div style="margin-bottom: 10px;">
-          <strong>Axis 1:</strong> 
-          Min: <input type="number" id="servo1_min" value="0" style="width: 60px;">
-          Max: <input type="number" id="servo1_max" value="180" style="width: 60px;">
-        </div>
-
-        <div style="margin-bottom: 10px;">
-          <strong>Axis 2:</strong> 
-          Min: <input type="number" id="servo2_min" value="15" style="width: 60px;">
-          Max: <input type="number" id="servo2_max" value="165" style="width: 60px;">
-        </div>
-
-        <div style="margin-bottom: 10px;">
-          <strong>Axis 3:</strong> 
-          Min: <input type="number" id="servo3_min" value="10" style="width: 60px;">
-          Max: <input type="number" id="servo3_max" value="170" style="width: 60px;">
-        </div>
-
-        <button onclick="applyServoLimits()" style="margin-top: 10px; padding: 6px 12px;">Apply Limits</button>
-      </fieldset>
+  <header>
+    <div>
+      <h1>ESP32 IK Arm Controller</h1>
+      <div id="status" class="status-panel">Status: Disconnected</div>
     </div>
-  </section>
+    <div>
+      <button id="connectBtn" class="btn">Connect BLE</button>
+      <button id="disconnectBtn" class="btn btn-disconnect">Disconnect</button>
+    </div>
+  </header>
 
-  <!-- 4. TAB SWITCHING SCRIPT -->
+  <div class="control-container">
+    <!-- LEFT JOYSTICK: Base Spin (X) & Reach In/Out (Y) -->
+    <div class="stick-wrapper">
+      <div class="stick-label">Base & Reach (In/Out)</div>
+      <div id="leftBase" class="joystick-base">
+        <div id="leftHandle" class="joystick-handle"></div>
+      </div>
+    </div>
+
+    <!-- CENTER JOYSTICK: Height Up/Down (Y-axis only) -->
+    <div class="stick-wrapper">
+      <div class="stick-label">Height (Up/Down)</div>
+      <div id="heightBase" class="joystick-base">
+        <div id="heightHandle" class="joystick-handle"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT BUTTON: Claw Toggle (Full Open / Full Close) -->
+    <div class="stick-wrapper">
+      <div class="stick-label">Claw Action</div>
+      <div id="clawBtn" class="claw-btn">CLOSED</div>
+    </div>
+  </div>
+
+  <footer>
+    <span id="packetDisplay">Packet Out: J:0,0,0,0</span>
+  </footer>
+
   <script>
-    function switchTab(viewId, btn) {
-      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-      
-      document.getElementById(viewId).classList.add('active');
-      btn.classList.add('active');
+    const SERVICE_UUID  = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+    const CHAR_RX_UUID  = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+
+    let bleDevice = null;
+    let rxCharacteristic = null;
+
+    // Control values
+    let baseSpin = 0;   // Base Spin (Left Stick X)
+    let reachVal = 0;   // Reach In/Out (Left Stick Y)
+    let heightVal = 0;  // Height Up/Down (Center Stick Y)
+    let clawState = 0;  // Claw Button: 0 = Closed, 1 = Open
+
+    const connectBtn = document.getElementById('connectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const statusDiv = document.getElementById('status');
+    const packetDisplay = document.getElementById('packetDisplay');
+    const clawBtn = document.getElementById('clawBtn');
+
+    // --- BLE CONNECT ---
+    connectBtn.addEventListener('click', async () => {
+      try {
+        statusDiv.innerText = "Status: Searching for BLE device...";
+        
+        bleDevice = await navigator.bluetooth.requestDevice({
+          filters: [{ name: 'S3_ARM_BLE' }],
+          optionalServices: [SERVICE_UUID]
+        });
+
+        bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
+
+        const server = await bleDevice.gatt.connect();
+        const service = await server.getPrimaryService(SERVICE_UUID);
+        rxCharacteristic = await service.getCharacteristic(CHAR_RX_UUID);
+
+        statusDiv.innerText = "Status: Connected to S3_ARM_BLE";
+        statusDiv.style.color = "#00e676";
+        connectBtn.style.display = 'none';
+        disconnectBtn.style.display = 'inline-block';
+
+        startTransmissionLoop();
+
+      } catch (error) {
+        console.error(error);
+        statusDiv.innerText = "Status: Connection Failed - " + error.message;
+        statusDiv.style.color = "#ff1744";
+      }
+    });
+
+    disconnectBtn.addEventListener('click', () => {
+      if (bleDevice && bleDevice.gatt.connected) {
+        bleDevice.gatt.disconnect();
+      }
+    });
+
+    function onDisconnected() {
+      statusDiv.innerText = "Status: Disconnected";
+      statusDiv.style.color = "#aaa";
+      connectBtn.style.display = 'inline-block';
+      disconnectBtn.style.display = 'none';
+      rxCharacteristic = null;
     }
 
-    // Testing logic calls
-    function toggleControlLogic() {
-      const isChecked = document.getElementById('controlToggle').checked;
-      fetch('/api/control/enable', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: isChecked })
-      }).catch(err => console.log('Mock/Offline Mode'));
+    // --- CLAW BUTTON TOGGLE ---
+    clawBtn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      clawState = clawState === 0 ? 1 : 0;
+      if (clawState === 1) {
+        clawBtn.innerText = "OPEN";
+        clawBtn.classList.add('open');
+      } else {
+        clawBtn.innerText = "CLOSED";
+        clawBtn.classList.remove('open');
+      }
+    });
+
+    // --- JOYSTICK TOUCH LOGIC ---
+    function setupJoystick(baseId, handleId, lockX, onChange) {
+      const base = document.getElementById(baseId);
+      const handle = document.getElementById(handleId);
+
+      const maxRadius = 55;
+      let activeTouchId = null;
+
+      function updatePosition(clientX, clientY) {
+        const rect = base.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        let deltaX = lockX ? 0 : clientX - centerX;
+        let deltaY = clientY - centerY;
+
+        const distance = Math.hypot(deltaX, deltaY);
+
+        if (distance > maxRadius) {
+          deltaX = (deltaX / distance) * maxRadius;
+          deltaY = (deltaY / distance) * maxRadius;
+        }
+
+        handle.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+
+        const normX = Math.round((deltaX / maxRadius) * 100);
+        const normY = Math.round((-deltaY / maxRadius) * 100);
+
+        onChange(normX, normY);
+      }
+
+      function resetPosition() {
+        handle.style.transform = `translate(0px, 0px)`;
+        onChange(0, 0);
+      }
+
+      base.addEventListener('touchstart', (e) => {
+        if (activeTouchId === null) {
+          const touch = e.changedTouches[0];
+          activeTouchId = touch.identifier;
+          updatePosition(touch.clientX, touch.clientY);
+        }
+      });
+
+      window.addEventListener('touchmove', (e) => {
+        if (activeTouchId !== null) {
+          for (let touch of e.changedTouches) {
+            if (touch.identifier === activeTouchId) {
+              updatePosition(touch.clientX, touch.clientY);
+            }
+          }
+        }
+      });
+
+      window.addEventListener('touchend', (e) => {
+        if (activeTouchId !== null) {
+          for (let touch of e.changedTouches) {
+            if (touch.identifier === activeTouchId) {
+              activeTouchId = null;
+              resetPosition();
+            }
+          }
+        }
+      });
+
+      let isMouseDown = false;
+      base.addEventListener('mousedown', (e) => {
+        isMouseDown = true;
+        updatePosition(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (isMouseDown) updatePosition(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (isMouseDown) {
+          isMouseDown = false;
+          resetPosition();
+        }
+      });
     }
 
-    function updateControlMode() {
-      const mode = document.getElementById('controlMode').value;
-      fetch('/api/control/mode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: mode })
-      }).catch(err => console.log('Mock/Offline Mode'));
-    }
+    // Attach controllers
+    setupJoystick('leftBase', 'leftHandle', false, (x, y) => {
+      baseSpin = x;
+      reachVal = y;
+    });
 
-    function applyServoLimits() {
-      const limits = {
-        servo1: { min: parseInt(document.getElementById('servo1_min').value), max: parseInt(document.getElementById('servo1_max').value) },
-        servo2: { min: parseInt(document.getElementById('servo2_min').value), max: parseInt(document.getElementById('servo2_max').value) },
-        servo3: { min: parseInt(document.getElementById('servo3_min').value), max: parseInt(document.getElementById('servo3_max').value) }
-      };
-      
-      fetch('/api/servos/limits', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(limits)
-      }).catch(err => console.log('Mock/Offline Mode'));
+    setupJoystick('heightBase', 'heightHandle', true, (x, y) => {
+      heightVal = y;
+    });
+
+    // --- BLE CONTINUOUS STREAM (50 Hz) ---
+    let transmissionTimer = null;
+
+    function startTransmissionLoop() {
+      if (transmissionTimer) clearInterval(transmissionTimer);
+
+      transmissionTimer = setInterval(async () => {
+        if (rxCharacteristic && bleDevice.gatt.connected) {
+          // Packet format: "J:BaseSpin,ReachVal,ClawState,HeightVal"
+          const packetStr = `J:${baseSpin},${reachVal},${clawState},${heightVal}`;
+          packetDisplay.innerText = "Packet Out: " + packetStr;
+
+          try {
+            const encoder = new TextEncoder();
+            await rxCharacteristic.writeValueWithoutResponse(encoder.encode(packetStr));
+          } catch (err) {
+            console.warn("BLE Write Error: ", err);
+          }
+        }
+      }, 30);
     }
   </script>
-
-  <!-- KEEP YOUR ORIGINAL JAVASCRIPT CODE AT THE BOTTOM AS WELL -->
-
 </body>
 </html>
