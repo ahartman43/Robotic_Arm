@@ -2,369 +2,434 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>ESP32 IK Robotic Arm Controller</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robotic Arm Control Panel</title>
   <style>
+    /* Global Styles */
     * {
       box-sizing: border-box;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: none;
-    }
-    body {
       margin: 0;
       padding: 0;
-      background-color: #121212;
-      color: #ffffff;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      justify-content: space-between;
-      align-items: center;
-      overflow: hidden;
     }
-    header {
-      width: 100%;
-      padding: 15px;
-      background-color: #1e1e1e;
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f4f6f8;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    /* Top Navigation Bar */
+    .navbar {
+      background-color: #1e293b;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 2px solid #333;
-    }
-    h1 {
-      margin: 0;
-      font-size: 1.2rem;
-      color: #00e676;
-    }
-    .btn {
-      background-color: #2979ff;
+      padding: 12px 24px;
       color: #fff;
-      border: none;
-      padding: 10px 20px;
-      font-size: 0.9rem;
-      font-weight: bold;
+    }
+    .navbar h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #94a3b8;
+      padding: 8px 16px;
       border-radius: 6px;
+      font-weight: 500;
       cursor: pointer;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: all 0.2s ease;
     }
-    .btn:active {
-      transform: scale(0.98);
+    .tab-btn:hover {
+      color: #fff;
+      background-color: #334155;
     }
-    .btn-disconnect {
-      background-color: #ff1744;
+    .tab-btn.active {
+      color: #fff;
+      background-color: #2563eb;
+    }
+
+    /* Container */
+    .container {
+      max-width: 800px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+
+    /* View Sections */
+    .view-section {
       display: none;
     }
-    .status-panel {
+    .view-section.active {
+      display: block;
+    }
+
+    /* Card Panels */
+    .panel-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .panel-card h3 {
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+      color: #0f172a;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 8px;
+    }
+
+    /* Controls & Inputs */
+    .control-group {
+      margin-bottom: 16px;
+    }
+    .control-group label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #475569;
+    }
+    .range-inputs {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .range-inputs label {
       font-size: 0.85rem;
-      color: #aaa;
-      margin-top: 5px;
+      font-weight: normal;
     }
-    .control-container {
+    .range-inputs input[type="number"] {
+      width: 80px;
+      padding: 6px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    .slider-control {
       display: flex;
-      width: 100%;
-      height: 70vh;
-      justify-content: space-around;
       align-items: center;
-      padding: 10px;
+      gap: 12px;
     }
-    .stick-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    .slider-control input[type="range"] {
+      flex: 1;
     }
-    .stick-label {
-      font-size: 1rem;
+    .slider-val {
+      width: 45px;
+      text-align: right;
       font-weight: bold;
-      margin-bottom: 15px;
-      color: #00e676;
+      color: #2563eb;
     }
-    .joystick-base {
-      width: 170px;
-      height: 170px;
-      background: radial-gradient(circle, #2a2a2a 0%, #1a1a1a 100%);
-      border: 4px solid #333;
-      border-radius: 50%;
+
+    /* Toggle Switch */
+    .switch-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .switch {
       position: relative;
-      box-shadow: inset 0 0 15px rgba(0,0,0,0.8), 0 0 10px rgba(0,230,118,0.2);
+      display: inline-block;
+      width: 48px;
+      height: 24px;
     }
-    .joystick-handle {
-      width: 55px;
-      height: 55px;
-      background: radial-gradient(circle, #2979ff 0%, #1565c0 100%);
-      border: 2px solid #64b5f6;
-      border-radius: 50%;
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider-round {
       position: absolute;
-      top: 57.5px;
-      left: 57.5px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    }
-    .claw-btn {
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      background: radial-gradient(circle, #ff9100 0%, #d50000 100%);
-      border: 4px solid #ffab40;
-      color: #fff;
-      font-size: 1.2rem;
-      font-weight: bold;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       cursor: pointer;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.6);
-      transition: transform 0.1s, background 0.2s;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #cbd5e1;
+      transition: .3s;
+      border-radius: 24px;
     }
-    .claw-btn:active {
-      transform: scale(0.92);
+    .slider-round:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
     }
-    .claw-btn.open {
-      background: radial-gradient(circle, #00e676 0%, #00a152 100%);
-      border-color: #69f0ae;
+    input:checked + .slider-round {
+      background-color: #2563eb;
     }
-    footer {
+    input:checked + .slider-round:before {
+      transform: translateX(24px);
+    }
+
+    /* Dropdowns & Buttons */
+    select {
       width: 100%;
-      padding: 10px;
-      background-color: #1e1e1e;
-      text-align: center;
+      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      background-color: #fff;
+      font-size: 0.9rem;
+    }
+    .btn-primary {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+
+    /* Console Log Output */
+    .log-box {
+      background: #0f172a;
+      color: #38bdf8;
       font-family: monospace;
-      font-size: 0.8rem;
-      color: #777;
-      border-top: 1px solid #333;
+      padding: 12px;
+      border-radius: 6px;
+      height: 100px;
+      overflow-y: auto;
+      font-size: 0.85rem;
     }
   </style>
 </head>
 <body>
 
-  <header>
-    <div>
-      <h1>ESP32 IK Arm Controller</h1>
-      <div id="status" class="status-panel">Status: Disconnected</div>
-    </div>
-    <div>
-      <button id="connectBtn" class="btn">Connect BLE</button>
-      <button id="disconnectBtn" class="btn btn-disconnect">Disconnect</button>
-    </div>
+  <!-- Navigation Bar -->
+  <header class="navbar">
+    <h1>Robotic Control Center</h1>
+    <nav class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('mainView', this)">Main Control</button>
+      <button class="tab-btn" onclick="switchTab('testingView', this)">Testing & Tuning</button>
+    </nav>
   </header>
 
-  <div class="control-container">
-    <!-- LEFT JOYSTICK: Base Spin (X) & Reach In/Out (Y) -->
-    <div class="stick-wrapper">
-      <div class="stick-label">Base & Reach (In/Out)</div>
-      <div id="leftBase" class="joystick-base">
-        <div id="leftHandle" class="joystick-handle"></div>
+  <main class="container">
+
+    <!-- 1. MAIN CONTROL VIEW -->
+    <section id="mainView" class="view-section active">
+      <div class="panel-card">
+        <h3>Manual Joint Position Controls</h3>
+        
+        <!-- Axis 1 Slider -->
+        <div class="control-group">
+          <label for="joint1">Axis 1 (Base)</label>
+          <div class="slider-control">
+            <input type="range" id="joint1" min="0" max="180" value="90" oninput="updateJoint('servo1', this.value)">
+            <span id="joint1_val" class="slider-val">90°</span>
+          </div>
+        </div>
+
+        <!-- Axis 2 Slider -->
+        <div class="control-group">
+          <label for="joint2">Axis 2 (Shoulder)</label>
+          <div class="slider-control">
+            <input type="range" id="joint2" min="15" max="165" value="90" oninput="updateJoint('servo2', this.value)">
+            <span id="joint2_val" class="slider-val">90°</span>
+          </div>
+        </div>
+
+        <!-- Axis 3 Slider -->
+        <div class="control-group">
+          <label for="joint3">Axis 3 (Elbow)</label>
+          <div class="slider-control">
+            <input type="range" id="joint3" min="10" max="170" value="90" oninput="updateJoint('servo3', this.value)">
+            <span id="joint3_val" class="slider-val">90°</span>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <!-- CENTER JOYSTICK: Height Up/Down (Y-axis only) -->
-    <div class="stick-wrapper">
-      <div class="stick-label">Height (Up/Down)</div>
-      <div id="heightBase" class="joystick-base">
-        <div id="heightHandle" class="joystick-handle"></div>
+    <!-- 2. TESTING & TUNING VIEW -->
+    <section id="testingView" class="view-section">
+      
+      <!-- Control Mode Toggle Panel -->
+      <div class="panel-card">
+        <h3>Control Logic Configuration</h3>
+        
+        <div class="switch-container">
+          <label class="switch">
+            <input type="checkbox" id="controlToggle" onchange="toggleControlLogic()">
+            <span class="slider-round"></span>
+          </label>
+          <span id="controlStatusText">Closed-Loop Control: <strong>OFF (Manual)</strong></span>
+        </div>
+
+        <div class="control-group">
+          <label for="controlMode">Active Control Strategy</label>
+          <select id="controlMode" onchange="updateControlMode()">
+            <option value="pid">PID Controller</option>
+            <option value="bangbang">Bang-Bang / Threshold</option>
+            <option value="kinematic">Inverse Kinematics</option>
+          </select>
+        </div>
       </div>
+
+      <!-- Dynamic Servo Boundary Panel -->
+      <div class="panel-card">
+        <h3>Servo Dynamic Limits (Safety Boundaries)</h3>
+        
+        <!-- Servo 1 Limits -->
+        <div class="control-group">
+          <label>Axis 1 Range Limits</label>
+          <div class="range-inputs">
+            Min: <input type="number" id="servo1_min" value="0" min="0" max="180">
+            Max: <input type="number" id="servo1_max" value="180" min="0" max="180">
+          </div>
+        </div>
+
+        <!-- Servo 2 Limits -->
+        <div class="control-group">
+          <label>Axis 2 Range Limits</label>
+          <div class="range-inputs">
+            Min: <input type="number" id="servo2_min" value="15" min="0" max="180">
+            Max: <input type="number" id="servo2_max" value="165" min="0" max="180">
+          </div>
+        </div>
+
+        <!-- Servo 3 Limits -->
+        <div class="control-group">
+          <label>Axis 3 Range Limits</label>
+          <div class="range-inputs">
+            Min: <input type="number" id="servo3_min" value="10" min="0" max="180">
+            Max: <input type="number" id="servo3_max" value="170" min="0" max="180">
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="applyServoLimits()">Apply & Sync Limits</button>
+      </div>
+
+    </section>
+
+    <!-- Communication Log Output -->
+    <div class="panel-card">
+      <h3>System Activity Log</h3>
+      <div id="logBox" class="log-box">Initialized interface. Waiting for user input...</div>
     </div>
 
-    <!-- RIGHT BUTTON: Claw Toggle (Full Open / Full Close) -->
-    <div class="stick-wrapper">
-      <div class="stick-label">Claw Action</div>
-      <div id="clawBtn" class="claw-btn">CLOSED</div>
-    </div>
-  </div>
-
-  <footer>
-    <span id="packetDisplay">Packet Out: J:0,0,0,0</span>
-  </footer>
+  </main>
 
   <script>
-    const SERVICE_UUID  = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-    const CHAR_RX_UUID  = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+    // System State Storage
+    let configState = {
+      controlEnabled: false,
+      controlMode: 'pid',
+      servoLimits: {
+        servo1: { min: 0, max: 180 },
+        servo2: { min: 15, max: 165 },
+        servo3: { min: 10, max: 170 }
+      }
+    };
 
-    let bleDevice = null;
-    let rxCharacteristic = null;
+    // Navigation Tab Switcher
+    function switchTab(viewId, btn) {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById(viewId).classList.add('active');
+      btn.classList.add('active');
+    }
 
-    // Control values
-    let baseSpin = 0;   // Base Spin (Left Stick X)
-    let reachVal = 0;   // Reach In/Out (Left Stick Y)
-    let heightVal = 0;  // Height Up/Down (Center Stick Y)
-    let clawState = 0;  // Claw Button: 0 = Closed, 1 = Open
+    // Manual Servo Position Update
+    function updateJoint(joint, val) {
+      document.getElementById(joint.replace('servo', 'joint') + '_val').innerText = val + '°';
+      logMessage(`Command sent: ${joint} -> ${val}°`);
+      sendAPI('/api/servos/position', { joint: joint, angle: parseInt(val) });
+    }
 
-    const connectBtn = document.getElementById('connectBtn');
-    const disconnectBtn = document.getElementById('disconnectBtn');
-    const statusDiv = document.getElementById('status');
-    const packetDisplay = document.getElementById('packetDisplay');
-    const clawBtn = document.getElementById('clawBtn');
+    // Toggle Closed-Loop Control State
+    function toggleControlLogic() {
+      const isChecked = document.getElementById('controlToggle').checked;
+      configState.controlEnabled = isChecked;
+      
+      document.getElementById('controlStatusText').innerHTML = 
+        `Closed-Loop Control: <strong>${isChecked ? 'ON' : 'OFF (Manual)'}</strong>`;
 
-    // --- BLE CONNECT ---
-    connectBtn.addEventListener('click', async () => {
+      logMessage(`Control Loop toggled: ${isChecked ? 'ENABLED' : 'DISABLED'}`);
+      sendAPI('/api/control/enable', { enabled: isChecked });
+    }
+
+    // Change Active Control Strategy
+    function updateControlMode() {
+      const mode = document.getElementById('controlMode').value;
+      configState.controlMode = mode;
+      
+      logMessage(`Control Mode set to: ${mode.toUpperCase()}`);
+      sendAPI('/api/control/mode', { mode: mode });
+    }
+
+    // Apply New Min/Max Limits & Dynamic Updates to Sliders
+    function applyServoLimits() {
+      configState.servoLimits = {
+        servo1: {
+          min: parseInt(document.getElementById('servo1_min').value),
+          max: parseInt(document.getElementById('servo1_max').value)
+        },
+        servo2: {
+          min: parseInt(document.getElementById('servo2_min').value),
+          max: parseInt(document.getElementById('servo2_max').value)
+        },
+        servo3: {
+          min: parseInt(document.getElementById('servo3_min').value),
+          max: parseInt(document.getElementById('servo3_max').value)
+        }
+      };
+
+      // Dynamically clamp active manual sliders to new range
+      updateSliderBounds('joint1', configState.servoLimits.servo1);
+      updateSliderBounds('joint2', configState.servoLimits.servo2);
+      updateSliderBounds('joint3', configState.servoLimits.servo3);
+
+      logMessage('Updated Servo Safety Boundaries in system.');
+      sendAPI('/api/servos/limits', configState.servoLimits);
+    }
+
+    // Update Slider Ranges Dynamically
+    function updateSliderBounds(sliderId, limits) {
+      const slider = document.getElementById(sliderId);
+      slider.min = limits.min;
+      slider.max = limits.max;
+      if (parseInt(slider.value) < limits.min) slider.value = limits.min;
+      if (parseInt(slider.value) > limits.max) slider.value = limits.max;
+      document.getElementById(sliderId + '_val').innerText = slider.value + '°';
+    }
+
+    // Central API Communication Helper
+    async function sendAPI(endpoint, payload) {
       try {
-        statusDiv.innerText = "Status: Searching for BLE device...";
-        
-        bleDevice = await navigator.bluetooth.requestDevice({
-          filters: [{ name: 'S3_ARM_BLE' }],
-          optionalServices: [SERVICE_UUID]
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
-
-        bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
-
-        const server = await bleDevice.gatt.connect();
-        const service = await server.getPrimaryService(SERVICE_UUID);
-        rxCharacteristic = await service.getCharacteristic(CHAR_RX_UUID);
-
-        statusDiv.innerText = "Status: Connected to S3_ARM_BLE";
-        statusDiv.style.color = "#00e676";
-        connectBtn.style.display = 'none';
-        disconnectBtn.style.display = 'inline-block';
-
-        startTransmissionLoop();
-
-      } catch (error) {
-        console.error(error);
-        statusDiv.innerText = "Status: Connection Failed - " + error.message;
-        statusDiv.style.color = "#ff1744";
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+      } catch (err) {
+        // Log gracefully when testing without a backend connected
+        console.warn(`API Post to ${endpoint} failed (offline/mock mode):`, payload);
       }
-    });
-
-    disconnectBtn.addEventListener('click', () => {
-      if (bleDevice && bleDevice.gatt.connected) {
-        bleDevice.gatt.disconnect();
-      }
-    });
-
-    function onDisconnected() {
-      statusDiv.innerText = "Status: Disconnected";
-      statusDiv.style.color = "#aaa";
-      connectBtn.style.display = 'inline-block';
-      disconnectBtn.style.display = 'none';
-      rxCharacteristic = null;
     }
 
-    // --- CLAW BUTTON TOGGLE ---
-    clawBtn.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      clawState = clawState === 0 ? 1 : 0;
-      if (clawState === 1) {
-        clawBtn.innerText = "OPEN";
-        clawBtn.classList.add('open');
-      } else {
-        clawBtn.innerText = "CLOSED";
-        clawBtn.classList.remove('open');
-      }
-    });
-
-    // --- JOYSTICK TOUCH LOGIC ---
-    function setupJoystick(baseId, handleId, lockX, onChange) {
-      const base = document.getElementById(baseId);
-      const handle = document.getElementById(handleId);
-
-      const maxRadius = 55;
-      let activeTouchId = null;
-
-      function updatePosition(clientX, clientY) {
-        const rect = base.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-
-        let deltaX = lockX ? 0 : clientX - centerX;
-        let deltaY = clientY - centerY;
-
-        const distance = Math.hypot(deltaX, deltaY);
-
-        if (distance > maxRadius) {
-          deltaX = (deltaX / distance) * maxRadius;
-          deltaY = (deltaY / distance) * maxRadius;
-        }
-
-        handle.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-
-        const normX = Math.round((deltaX / maxRadius) * 100);
-        const normY = Math.round((-deltaY / maxRadius) * 100);
-
-        onChange(normX, normY);
-      }
-
-      function resetPosition() {
-        handle.style.transform = `translate(0px, 0px)`;
-        onChange(0, 0);
-      }
-
-      base.addEventListener('touchstart', (e) => {
-        if (activeTouchId === null) {
-          const touch = e.changedTouches[0];
-          activeTouchId = touch.identifier;
-          updatePosition(touch.clientX, touch.clientY);
-        }
-      });
-
-      window.addEventListener('touchmove', (e) => {
-        if (activeTouchId !== null) {
-          for (let touch of e.changedTouches) {
-            if (touch.identifier === activeTouchId) {
-              updatePosition(touch.clientX, touch.clientY);
-            }
-          }
-        }
-      });
-
-      window.addEventListener('touchend', (e) => {
-        if (activeTouchId !== null) {
-          for (let touch of e.changedTouches) {
-            if (touch.identifier === activeTouchId) {
-              activeTouchId = null;
-              resetPosition();
-            }
-          }
-        }
-      });
-
-      let isMouseDown = false;
-      base.addEventListener('mousedown', (e) => {
-        isMouseDown = true;
-        updatePosition(e.clientX, e.clientY);
-      });
-
-      window.addEventListener('mousemove', (e) => {
-        if (isMouseDown) updatePosition(e.clientX, e.clientY);
-      });
-
-      window.addEventListener('mouseup', () => {
-        if (isMouseDown) {
-          isMouseDown = false;
-          resetPosition();
-        }
-      });
-    }
-
-    // Attach controllers
-    setupJoystick('leftBase', 'leftHandle', false, (x, y) => {
-      baseSpin = x;
-      reachVal = y;
-    });
-
-    setupJoystick('heightBase', 'heightHandle', true, (x, y) => {
-      heightVal = y;
-    });
-
-    // --- BLE CONTINUOUS STREAM (50 Hz) ---
-    let transmissionTimer = null;
-
-    function startTransmissionLoop() {
-      if (transmissionTimer) clearInterval(transmissionTimer);
-
-      transmissionTimer = setInterval(async () => {
-        if (rxCharacteristic && bleDevice.gatt.connected) {
-          // Packet format: "J:BaseSpin,ReachVal,ClawState,HeightVal"
-          const packetStr = `J:${baseSpin},${reachVal},${clawState},${heightVal}`;
-          packetDisplay.innerText = "Packet Out: " + packetStr;
-
-          try {
-            const encoder = new TextEncoder();
-            await rxCharacteristic.writeValueWithoutResponse(encoder.encode(packetStr));
-          } catch (err) {
-            console.warn("BLE Write Error: ", err);
-          }
-        }
-      }, 30);
+    // Activity Log Helper
+    function logMessage(msg) {
+      const logBox = document.getElementById('logBox');
+      const time = new Date().toLocaleTimeString();
+      logBox.innerHTML += `<br>[${time}] ${msg}`;
+      logBox.scrollTop = logBox.scrollHeight;
     }
   </script>
 </body>
